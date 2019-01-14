@@ -1,0 +1,15 @@
+[Unit]
+Description=Tomcat
+After=syslog.target network.target remote-fs.target nss-lookup.target
+
+[Service]
+Group=tomcat
+User=tomcat
+Type=oneshot
+ExecStart=/home/tomcat/apache-tomcat-9.0.14/bin/startup.sh
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/usr/local/tomcat/bin/shutdown.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

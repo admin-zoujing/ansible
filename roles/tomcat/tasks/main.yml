@@ -1,0 +1,40 @@
+---
+
+
+#创建用户
+- name: group
+  group: name=tomcat
+- name: user
+  user: name=tomcat group=tomcat home=/home/tomcat
+  sudo: True
+
+#创建拷贝目录
+- file: dest=/usr/local/src/tomcat9 state=directory
+                    
+- name: 发送tomcat文件到远程主机
+  copy: "src={{ item.src }} dest={{ item.dest }}"
+  with_items: 
+      - src: "/etc/ansible/roles/tomcat/files/tomcat9/apache-tomcat-9.0.14-windows-x64.zip"
+        dest: "/usr/local/src/tomcat9"
+
+- name: 解压tomcat软件包
+  command: >
+         unzip /usr/local/src/tomcat9/apache-tomcat-9.0.14-windows-x64.zip -d /home/tomcat
+
+- name: 赋予解压目录用户
+  file: path=/home/tomcat owner=tomcat group=tomcat state=directory recurse=yes
+
+- name: 为tomcat赋予执行权限
+  command: >
+          chmod -R 755 /home/tomcat/apache-tomcat-9.0.14/bin/
+
+#- name: 推送配置文件
+#  template: src=tomcat-users.xml dest=/home/tomcat/apache-tomcat-9.0.14/conf/
+#  notify: restart tomcat
+
+- name: 安装tomcat启动脚本
+  copy: src=/etc/ansible/roles/tomcat/files/tomcat9/tomcat.service dest=/usr/lib/systemd/system/tomcat.service mode=0755
+
+- name: 开启tomcat
+  service: name=tomcat state=started enabled=yes
+

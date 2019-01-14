@@ -1,0 +1,31 @@
+---
+
+#创建拷贝目录
+- file: dest=/usr/local/src/jdk1.8.0 state=directory
+    
+- name: 发送JDK软件包和JAVA配置文件到远程主机
+  copy: "src={{ item.src }} dest={{ item.dest }}"
+  with_items: 
+      - src: "/etc/ansible/roles/jdk/files/jdk1.8.0/jdk-8u144-linux-x64.tar.gz"
+        dest: "/usr/local/src/jdk1.8.0"
+      - src: "/etc/ansible/roles/jdk/files/jdk1.8.0/java.sh"
+        dest: "/etc/profile.d"
+
+- name: 解压JDK软件包
+  command: >
+       tar -zxvf /usr/local/src/jdk1.8.0/jdk-8u144-linux-x64.tar.gz -C /usr/local
+
+- name: 赋予解压目录用户
+  file: path=/usr/local/jdk1.8.0_144 owner=root group=root state=directory recurse=yes
+
+- name: 链接JDK路径
+  command: >
+       ln -svf /usr/local/jdk1.8.0_144 /usr/local/java
+
+- name: 为JAVA命令更新alternatives
+  command: >
+       update-alternatives --install /usr/bin/java java /usr/local/java/bin/java 300
+    
+- name: 为javac更新alternatives
+  command: >
+       update-alternatives --install /usr/bin/javac javac /usr/local/java/bin/javac 300  
