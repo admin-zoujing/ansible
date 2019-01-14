@@ -1,0 +1,108 @@
+---
+# 该playbook是整个项目的调度入口
+
+# 对所有主机进行基础配置
+- hosts: all
+      sudo:true
+  roles:
+    #  - security
+    #  - logging
+    #  - firewall
+
+# 配置nginx主机
+- hosts: nginx-servers
+      remote_user:root
+      gather_facts:false
+  roles:
+      - nginx
+
+# 配置httpd主机
+- hosts: httpd-servers
+      remote_user:root
+      gather_facts:false
+  roles:
+      - httpd
+
+# 配置php主机
+- hosts: php-servers
+      remote_user:root
+      gather_facts:false
+  roles:
+      - php
+
+# 配置tomcat主机
+- hosts: tomcat-servers
+      remote_user:root
+      gather_facts:false
+  roles:
+      - tomcat
+
+# 配置mysql主机
+- hosts: mysql-servers
+      remote_user:root
+      gather_facts:false
+  roles:
+      - mysql
+
+# 配置mariadb主机
+- hosts: mariadb-servers
+      remote_user:root
+      gather_facts:false
+  roles:
+      - mariadb
+
+# 配置memcached主机
+- hosts: memcached-servers
+      remote_user:root
+      gather_facts:false
+  roles:
+      - memcached
+
+# 配置mongodb主机
+- hosts: mongodb-servers
+      remote_user:root
+      gather_facts:false
+  roles:
+      - mongodb
+
+# 配置redis主机
+- hosts: redis-servers
+      remote_user:root
+      gather_facts:false
+  roles:
+      - redis
+
+# 配置jdk主机
+- hosts: jdk-servers
+      remote_user:root
+      gather_facts:false
+  roles:
+      - jdk
+
+# 配置elasticsearch主机
+- hosts: elasticsearch-servers
+      remote_user:root
+      gather_facts:false
+  roles:
+      - elasticsearch
+
+# 配置logstash主机
+- hosts: logstash-servers
+      remote_user:root
+      gather_facts:false
+  roles:
+      - logstash
+
+# 配置kibana主机
+- hosts: kibana-servers
+      remote_user:root
+      gather_facts:false
+  roles:
+      - kibana
+
+# 配置filebeat主机
+- hosts: filebeat-servers
+      remote_user:root
+      gather_facts:false
+  roles:
+      - filebeat
