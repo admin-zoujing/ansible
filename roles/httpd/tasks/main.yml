@@ -1,0 +1,63 @@
+---
+
+
+#创建用户
+- name: daemon
+  group: name=daemon
+- name: daemon
+  user: name=daemon group=daemon 
+  sudo: True
+
+#创建拷贝目录
+- file: dest=/usr/local/src/httpd2.4.37 state=directory
+- file: dest=/usr/local/apache state=directory
+                    
+- name: 发送httpd文件到远程主机
+  copy: "src={{ item.src }} dest={{ item.dest }}"
+  with_items: 
+      - src: "/etc/ansible/roles/httpd/files/httpd2.4.37/httpd-2.4.37.tar.gz"
+        dest: "/usr/local/src/httpd2.4.37"
+      - src: "/etc/ansible/roles/httpd/files/httpd2.4.37/apr-1.6.3.tar.gz"
+        dest: "/usr/local/src/httpd2.4.37"
+      - src: "/etc/ansible/roles/httpd/files/httpd2.4.37/apr-util-1.6.1.tar.gz"
+        dest: "/usr/local/src/httpd2.4.37"
+
+- name: 安装依赖包
+  yum: name={{ item }} state=latest  
+  with_items:
+      - openssl-devel
+      - pcre-devel
+      - gcc
+      - expat-devel
+
+- name: 编译安装apr
+  shell: 
+        cd /usr/local/src/httpd2.4.37;mkdir -pv /usr/local/apr;tar -zxvf apr-1.6.3.tar.gz -C /usr/local/apr;cd /usr/local/apr/apr-1.6.3/;./configure --prefix=/usr/local/apr;make && make install
+
+- name: 编译安装apr-util
+  shell: 
+        cd /usr/local/src/httpd2.4.37;mkdir -pv /usr/local/apr-util;tar -zxvf apr-util-1.6.1.tar.gz -C /usr/local/apr-util;cd /usr/local/apr-util/apr-util-1.6.1/;./configure --prefix=/usr/local/apr-util --with-apr=/usr/local/apr;make && make install
+
+- name: 编译安装httpd
+  shell: cd /usr/local/src/httpd2.4.37;mkdir -pv /usr/local/apache;tar -zxvf httpd-2.4.37.tar.gz -C /usr/local/apache;cd /usr/local/apache/httpd-2.4.37/;./configure --prefix=/usr/local/apache --sysconfdir=/usr/local/apache/conf --enable-so --enable--ssl --enable-cgi --enable-rewrite --with-zlib --with-pcre --with-apr=/usr/local/apr --with-apr-util=/usr/local/apr-util --enable-modeles=most --enable-mpms-shared=all --with-mpm=event;make && make install    
+
+- name: 赋予解压目录用户
+  file: path=/usr/local/apache owner=daemon group=daemon state=directory recurse=yes
+
+- name: 加入二进制程序
+  shell: 
+       echo 'export PATH=/usr/local/apache/bin:$PATH' > /etc/profile.d/httpd.sh
+       ln -sv /usr/local/apache/include /usr/include/httpd;
+       echo 'MANDATORY_MANPATH                       /usr/local/apache/man' >> /etc/man_db.conf;
+       sed -i 's|#ServerName www.example.com:80|ServerName localhost:80|' /usr/local/apache/conf/httpd.conf
+
+#- name: 推送配置文件
+#  copy: src=/etc/ansible/roles/httpd/files/httpd2.4.37/httpd.conf dest=/usr/local/apache/conf/httpd.conf 
+#  notify: restart httpd
+
+- name: 安装httpd启动脚本
+  copy: src=/etc/ansible/roles/httpd/files/httpd2.4.37/httpd.service dest=/usr/lib/systemd/system/httpd.service mode=0755
+
+- name: 开启httpd
+  service: name=httpd state=started enabled=yes
+
