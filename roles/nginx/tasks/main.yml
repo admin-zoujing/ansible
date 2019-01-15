@@ -1,0 +1,57 @@
+---
+
+
+#创建用户
+- name: nginx
+  group: name=nginx
+- name: nginx
+  user: name=nginx group=nginx home=/home/nginx
+  sudo: True
+
+#创建拷贝目录
+- file: dest=/usr/local/src/nginx1.14.1 state=directory
+- file: dest=/usr/local/nginx state=directory
+                    
+- name: 发送nginx文件到远程主机
+  copy: "src={{ item.src }} dest={{ item.dest }}"
+  with_items: 
+      - src: "/etc/ansible/roles/nginx/files/nginx1.14.1/nginx-1.14.1.tar.gz"
+        dest: "/usr/local/src/nginx1.14.1"
+
+- name: 安装依赖包
+  yum: name={{ item }} state=latest  
+  with_items:
+      - openssl-devel
+      - pcre-devel
+      - gcc
+
+- name: 解压nginx软件包 
+  command: >         
+         tar -zxvf /usr/local/src/nginx1.14.1/nginx-1.14.1.tar.gz -C /usr/local/nginx
+
+- name: 编译安装nginx
+  shell: cd /usr/local/nginx/nginx-1.14.1;./configure --user=nginx --group=nginx --prefix=/usr/local/nginx --with-http_stub_status_module --with-http_ssl_module --with-pcre;make && make install    
+
+- name: 赋予解压目录用户
+  file: path=/usr/local/nginx owner=nginx group=nginx state=directory recurse=yes
+
+- name: 加入二进制程序
+  shell: 
+       echo 'export PATH=/usr/local/nginx/sbin:$PATH' > /etc/profile.d/nginx.sh 
+       sed -i 's|#user  nobody;|user  nginx;|' /usr/local/nginx/conf/nginx.conf
+       sed -i 's|#error_log  logs/error.log;|error_log  logs/error.log;|' /usr/local/nginx/conf/nginx.conf
+
+#- name: 推送配置文件
+#  copy: src=/etc/ansible/roles/nginx/files/nginx1.14.1/nginx.conf dest=/usr/local/nginx/conf/nginx.conf 
+#  notify: restart tomcat
+
+- name: 调优
+  command: >
+        sed -i '/sendfile        on;/a\    server_tokens  off;' /usr/local/nginx/conf/nginx.conf     
+
+- name: 安装nginx启动脚本
+  copy: src=/etc/ansible/roles/nginx/files/nginx1.14.1/nginx.service dest=/usr/lib/systemd/system/nginx.service mode=0755
+
+- name: 开启nginx
+  service: name=nginx state=started enabled=yes
+
