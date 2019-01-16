@@ -32,6 +32,11 @@
 #  template: src=tomcat-users.xml dest=/home/tomcat/apache-tomcat-9.0.14/conf/
 #  notify: restart tomcat
 
+- name:开放端口服务
+  shell:
+        firewall-cmd --add-service=tomcat --permanent
+        firewall-cmd --reload
+
 - name: 安装tomcat启动脚本
   copy: src=/etc/ansible/roles/tomcat/files/tomcat9/tomcat.service dest=/usr/lib/systemd/system/tomcat.service mode=0755
 
