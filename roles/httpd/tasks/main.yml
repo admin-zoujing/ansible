@@ -55,7 +55,7 @@
 #  copy: src=/etc/ansible/roles/httpd/files/httpd2.4.37/httpd.conf dest=/usr/local/apache/conf/httpd.conf 
 #  notify: restart httpd
 
-- name:开放端口服务
+- name: 开放端口服务
   shell:
         firewall-cmd --add-service=http --permanent
         firewall-cmd --reload
