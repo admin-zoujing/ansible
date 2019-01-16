@@ -32,7 +32,7 @@
 #  template: src=tomcat-users.xml dest=/home/tomcat/apache-tomcat-9.0.14/conf/
 #  notify: restart tomcat
 
-- name:开放端口服务
+- name: 开放端口服务
   shell:
         firewall-cmd --add-service=tomcat --permanent
         firewall-cmd --reload
