@@ -1,0 +1,44 @@
+---
+
+- name: 创建组
+  group: name=mongodb
+- name: 创建用户
+  user: name=mongodb group=mongodb shell=/sbin/nologin
+
+- name: 创建拷贝目录
+  file: dest=/usr/local/src/mongodb3.6.9 state=directory
+                    
+- name: 发送mongodb文件到远程主机
+  copy: "src={{ item.src }} dest={{ item.dest }}"
+  with_items: 
+      - src: "/etc/ansible/roles/mongodb/files/mongodb3.6.9/mongodb-linux-x86_64-rhel70-3.6.9.tgz"
+        dest: "/usr/local/src/mongodb3.6.9"
+
+- name: 安装依赖包
+  shell: yum -y install gcc* make cmake autoconf libtool 
+
+- name: 编译安装mongodb
+  shell: 
+       cd /usr/local/src/mongodb3.6.9;tar -zxvf mongodb-linux-x86_64-rhel70-3.6.9.tgz -C /usr/local;ln -s /usr/local/mongodb-linux-x86_64-rhel70-3.6.9 /usr/local/mongodb;cd /usr/local/mongodb/;mkdir -pv /usr/local/mongodb/{data,logs};touch /usr/local/mongodb/logs/mongodb.log
+
+- name: 加入二进制程序
+  shell:
+       echo 'export PATH=/usr/local/mongodb/bin/:/usr/local/mongodb/sbin:$PATH' >> /etc/profile.d/mongodb.sh;
+
+- name: 拷贝配置文件mongo.conf
+  copy: src=/etc/ansible/roles/mongodb/files/mongodb3.6.9/mongo.conf dest=/usr/local/mongodb/mongo.conf
+
+- name: 安装mongodb启动脚本
+  copy: src=/etc/ansible/roles/mongodb/files/mongodb3.6.9/mongod.service dest=/usr/lib/systemd/system/mongod.service mode=0755
+
+- name: 赋予解压目录用户
+  file: path=/usr/local/mongodb owner=mongodb group=mongodb state=directory recurse=yes
+
+- name: 开启mongod
+  service: name=mongod state=started enabled=yes
+
+- name: 开放端口服务
+  shell:
+      firewall-cmd --permanent --zone=public --add-port=27017/tcp --permanent;
+      firewall-cmd --permanent --query-port=27017/tcp;
+      firewall-cmd --reload;

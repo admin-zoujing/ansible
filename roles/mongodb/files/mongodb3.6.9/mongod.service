@@ -1,0 +1,15 @@
+[Unit]
+Description=High-performance, schema-free document-oriented database
+After=syslog.target network.target
+
+[Service]
+Type=forking
+User=mongodb
+Group=mongodb
+ExecStart=/usr/local/mongodb/bin/mongod -f /usr/local/mongodb/mongo.conf
+LimitNOFILE=64000
+TimeoutStartSec=180
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
