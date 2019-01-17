@@ -1,0 +1,85 @@
+---
+
+- name: 创建组
+  group: name=mysql
+- name: 创建用户
+  user: name=mysql group=mysql shell=/sbin/nologin
+
+- name: 创建拷贝目录
+  file: dest=/usr/local/src/mysql5.7 state=directory
+                    
+- name: 发送mysql文件到远程主机
+  copy: "src={{ item.src }} dest={{ item.dest }}"
+  with_items: 
+      - src: "/etc/ansible/roles/mysql/files/mysql5.7/boost_1_59_0.tar.gz"
+        dest: "/usr/local/src/mysql5.7"
+      - src: "/etc/ansible/roles/mysql/files/mysql5.7/cmake-3.9.3.tar.gz"
+        dest: "/usr/local/src/mysql5.7"
+      - src: "/etc/ansible/roles/mysql/files/mysql5.7/mysql-5.7.24.tar.gz"
+        dest: "/usr/local/src/mysql5.7"
+      - src: "/etc/ansible/roles/mysql/files/mysql5.7/mysql-boost-5.7.24.tar.gz"
+        dest: "/usr/local/src/mysql5.7"
+      - src: "/etc/ansible/roles/mysql/files/mysql5.7/mysql-connector-java-8.0.13-1.el7.noarch.rpm"
+        dest: "/usr/local/src/mysql5.7"
+      - src: "/etc/ansible/roles/mysql/files/mysql5.7/percona-toolkit-3.0.12-1.el7.x86_64.rpm"
+        dest: "/usr/local/src/mysql5.7"
+      - src: "/etc/ansible/roles/mysql/files/mysql5.7/percona-xtrabackup-24-2.4.7-2.el7.x86_64.rpm"
+        dest: "/usr/local/src/mysql5.7"
+      - src: "/etc/ansible/roles/mysql/files/mysql5.7/mysqldump.sh"
+        dest: "/usr/local/src/mysql5.7"
+      - src: "/etc/ansible/roles/mysql/files/mysql5.7/xtrabackup.sh"
+        dest: "/usr/local/src/mysql5.7"
+
+- name: 安装依赖包
+  shell: yum -y install epel-release;yum install -y cmake apr* autoconf automake bison bzip2 bzip2* compat* cpp curl curl-devel fontconfig fontconfig-devel freetype freetype* freetype-devel gcc gcc-c++ gd gettext gettext-devel glibc kernel kernel-headers keyutils keyutils-libs-devel krb5-devel libcom_err-devel libpng libpng-devel libjpeg* libsepol-devel libselinux-devel libstdc++-devel libtool* libgomp libxml2 libxml2-devel libXpm* libtiff libtiff* make mpfr ncurses* ntp openssl openssl-devel patch pcre-devel perl php-common php-gd policycoreutils telnet t1lib t1lib* nasm nasm* wget zlib-devel texlive-latex texlive-metapost texlive-collection-fontsrecommended --skip-broken;yum install -y cmake apr* autoconf automake bison bzip2 bzip2* compat* cpp curl curl-devel fontconfig fontconfig-devel freetype freetype* freetype-devel gcc gcc-c++ gd gettext gettext-devel glibc kernel kernel-headers keyutils keyutils-libs-devel krb5-devel libcom_err-devel libpng libpng-devel libjpeg* libsepol-devel libselinux-devel libstdc++-devel libtool* libgomp libxml2 libxml2-devel libXpm* libtiff libtiff* make mpfr ncurses* ntp openssl openssl-devel patch pcre-devel perl php-common php-gd policycoreutils telnet t1lib t1lib* nasm nasm* wget zlib-devel texlive-latex texlive-metapost texlive-collection-fontsrecommended --skip-broken
+
+- name: 卸载mysql和marriadb
+  shell: yum -y remove mysql*;yum -y remove mariadb*;yum -y remove boost*
+
+- name: 编译安装mysql
+  shell: 
+        cd /usr/local/src/mysql5.7;mkdir -pv /usr/local/mysql/boost;mv boost_1_59_0.tar.gz /usr/local/mysql/boost;mkdir -pv /usr/local/mysql/{data,conf,logs};tar -zxvf mysql-5.7.24.tar.gz -C /usr/local/mysql;cd /usr/local/mysql/mysql-5.7.24/;cmake . -DCMAKE_INSTALL_PREFIX=/usr/local/mysql -DMYSQL_DATADIR=/usr/local/mysql/data -DSYSCONFDIR=/usr/local/mysql/conf -DMYSQL_USER=mysql -DMYSQL_UNIX_ADDR=/usr/local/mysql/logs/mysql.sock -DDEFAULT_CHARSET=utf8mb4 -DDEFAULT_COLLATION=utf8mb4_general_ci -DMYSQL_TCP_PORT=3306 -DWITH_MYISAM_STORAGE_ENGINE=1 -DWITH_INNOBASE_STORAGE_ENGINE=1 -DWITH_ARCHIVE_STORAGE_ENGINE=1 -DWITH_BLACKHOLE_STORAGE_ENGINE=1 -DENABLED_LOCAL_INFILE=1 -DWITH_SSL:STRING=bundled -DWITH_ZLIB:STRING=bundled -DENABLE_DOWNLOADS=1 -DDOWNLOAD_BOOST=1 -DWITH_BOOST=/usr/local/mysql/boost;make -j `grep processor /proc/cpuinfo | wc -l`;make install;make clean;rm CMakeCache.txt
+
+- name: 拷贝配置文件my.cnf  
+  copy: src=/etc/ansible/roles/mysql/files/mysql5.7/my.cnf dest=/usr/local/mysql/conf/my.cnf
+
+- name: 加入二进制程序
+  shell: 
+       echo 'export PATH=/usr/local/mysql/bin:$PATH' > /etc/profile.d/mysql.sh;
+       ln -sv /usr/local/mysql/include /usr/include/mysql;
+       echo '/usr/local/mysql/lib' > /etc/ld.so.conf.d/mysql.conf;
+       ln -s /usr/local/mysql/lib/libmysqlclient.so.20 /usr/lib/libmysqlclient.so.20;
+       ldconfig;
+       echo 'MANDATORY_MANPATH                       /usr/local/mysql/man' >> /etc/man_db.conf;
+
+- name: 安装mysqld启动脚本
+  copy: src=/etc/ansible/roles/mysql/files/mysql5.7/mysqld.service dest=/usr/lib/systemd/system/mysqld.service mode=0755
+
+- name: 初始化
+  shell: 
+        /usr/local/mysql/bin/mysqld --initialize --user=mysql --basedir=/usr/local/mysql --datadir=/usr/local/mysql/data/
+
+- name: 赋予解压目录用户
+  file: path=/usr/local/mysql owner=mysql group=mysql state=directory recurse=yes
+
+- name: 修改密码
+  shell: 
+        systemctl stop mysqld.service;
+        echo 'skip-grant-tables' >> /usr/local/mysql/conf/my.cnf;
+        systemctl restart mysqld.service;
+        sleep 5;
+        mysql -uroot -e "update mysql.user set authentication_string=PASSWORD('Root_123456*0987') where User='root';";
+        mysql -uroot -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'Root_123456*0987';";
+        mysql -uroot -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'Root_123456*0987' WITH GRANT OPTION;";
+        mysql -uroot -e "flush privileges;";
+        systemctl stop mysqld.service;
+        sed -i 's|skip-grant-tables|#skip-grant-tables|' /usr/local/mysql/conf/my.cnf;
+        systemctl restart mysqld.service;
+
+- name: 开启mysqld
+  service: name=mysqld state=started enabled=yes
+
+- name: 开放端口服务
+  shell:
+        firewall-cmd --add-service=mysqld --permanent;
+        firewall-cmd --reload

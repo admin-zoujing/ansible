@@ -5,7 +5,7 @@
 - name: group
   group: name=tomcat
 - name: user
-  user: name=tomcat group=tomcat home=/home/tomcat
+  user: name=tomcat group=tomcat shell=/sbin/nologin
   sudo: True
 
 #创建拷贝目录
@@ -32,14 +32,13 @@
 #  template: src=tomcat-users.xml dest=/home/tomcat/apache-tomcat-9.0.14/conf/
 #  notify: restart tomcat
 
-- name: 开放端口服务
-  shell:
-        firewall-cmd --add-service=tomcat --permanent
-        firewall-cmd --reload
-
 - name: 安装tomcat启动脚本
   copy: src=/etc/ansible/roles/tomcat/files/tomcat9/tomcat.service dest=/usr/lib/systemd/system/tomcat.service mode=0755
 
 - name: 开启tomcat
   service: name=tomcat state=started enabled=yes
 
+- name: 开放端口服务
+  shell:
+        firewall-cmd --add-service=tomcat --permanent;
+        firewall-cmd --reload;

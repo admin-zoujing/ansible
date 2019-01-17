@@ -1,0 +1,60 @@
+---
+
+- name: 创建组
+  group: name=memcached
+- name: 创建用户
+  user: name=memcached group=memcached shell=/sbin/nologin
+
+- name: 创建拷贝目录
+  file: dest=/usr/local/src/memcached1.5.12 state=directory
+                    
+- name: 发送memcached文件到远程主机
+  copy: "src={{ item.src }} dest={{ item.dest }}"
+  with_items: 
+      - src: "/etc/ansible/roles/memcached/files/memcached1.5.12/libevent-2.0.21-stable.tar.gz"
+        dest: "/usr/local/src/memcached1.5.12"
+      - src: "/etc/ansible/roles/memcached/files/memcached1.5.12/memcached-1.5.12.tar.gz"
+        dest: "/usr/local/src/memcached1.5.12"
+
+- name: 安装依赖包
+  shell: yum -y install gcc* make cmake autoconf libtool 
+
+- name: 安装libevent
+  shell: mkdir -p /usr/local/memcached/libevent;cd /usr/local/src/memcached1.5.12;tar -zxvf libevent-2.0.21-stable.tar.gz -C /usr/local/memcached/libevent;cd /usr/local/memcached/libevent/libevent-2.0.21-stable;./configure -prefix=/usr/local/memcached/libevent;make && make install
+
+- name: 加入二进制程序
+  shell:
+       echo 'export PATH=/usr/local/memcached/libevent/bin/:/usr/local/memcached/libevent/sbin:$PATH' >> /etc/profile.d/libevent.sh;
+       mkdir -pv /usr/include/memcached/libevent;
+       ln -sv /usr/local/memcached/libevent/include /usr/include/memcached/libevent;
+       echo '/usr/local/memcached/libevent/lib' >> /etc/ld.so.conf.d/libevent.conf;
+       echo 'MANPATH /usr/local/memcached/libevent/man' >> /etc/man.config;
+
+- name: 编译安装memcached
+  shell: 
+       cd /usr/local/src/memcached1.5.12;tar -zxvf memcached-1.5.12.tar.gz -C /usr/local/memcached/;cd /usr/local/memcached/memcached-1.5.12/;./configure --prefix=/usr/local/memcached/ --with-libevent=/usr/local/memcached/libevent;make && make install
+
+- name: 拷贝配置文件memcached.conf
+  copy: src=/etc/ansible/roles/memcached/files/memcached1.5.12/memcached.conf dest=/usr/local/memcached/memcached.conf
+
+- name: 加入二进制程序
+  shell: 
+       echo 'export PATH=/usr/local/memcached/bin/:/usr/local/memcached/sbin:$PATH' >> /etc/profile.d/libevent.sh;
+       ln -sv /usr/local/memcached/include /usr/include/memcached;
+       echo '/usr/local/memcached/lib' >> /etc/ld.so.conf.d/memcached.conf;
+       ldconfig;
+       echo 'MANPATH /usr/local/memcached/man' >> /etc/man.config
+
+- name: 安装memcached启动脚本
+  copy: src=/etc/ansible/roles/memcached/files/memcached1.5.12/memcached.service dest=/usr/lib/systemd/system/memcached.service mode=0755
+
+- name: 赋予解压目录用户
+  file: path=/usr/local/memcached owner=memcached group=memcached state=directory recurse=yes
+
+- name: 开启memcached
+  service: name=memcached state=started enabled=yes
+
+- name: 开放端口服务
+  shell:
+        firewall-cmd --add-service=memcached --permanent;
+        firewall-cmd --reload

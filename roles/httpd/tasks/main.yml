@@ -46,7 +46,7 @@
 
 - name: 加入二进制程序
   shell: 
-       echo 'export PATH=/usr/local/apache/bin:$PATH' > /etc/profile.d/httpd.sh
+       echo 'export PATH=/usr/local/apache/bin:$PATH' > /etc/profile.d/httpd.sh;
        ln -sv /usr/local/apache/include /usr/include/httpd;
        echo 'MANDATORY_MANPATH                       /usr/local/apache/man' >> /etc/man_db.conf;
        sed -i 's|#ServerName www.example.com:80|ServerName localhost:80|' /usr/local/apache/conf/httpd.conf
@@ -54,11 +54,7 @@
 #- name: 推送配置文件
 #  copy: src=/etc/ansible/roles/httpd/files/httpd2.4.37/httpd.conf dest=/usr/local/apache/conf/httpd.conf 
 #  notify: restart httpd
-
-- name: 开放端口服务
-  shell:
-        firewall-cmd --add-service=http --permanent
-        firewall-cmd --reload
+#
 
 - name: 安装httpd启动脚本
   copy: src=/etc/ansible/roles/httpd/files/httpd2.4.37/httpd.service dest=/usr/lib/systemd/system/httpd.service mode=0755
@@ -66,3 +62,7 @@
 - name: 开启httpd
   service: name=httpd state=started enabled=yes
 
+- name: 开放端口服务
+  shell:
+        firewall-cmd --add-service=httpd --permanent;
+        firewall-cmd --reload;

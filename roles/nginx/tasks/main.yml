@@ -5,7 +5,7 @@
 - name: nginx
   group: name=nginx
 - name: nginx
-  user: name=nginx group=nginx home=/home/nginx
+  user: name=nginx group=nginx shell=/sbin/nologin
   sudo: True
 
 #创建拷贝目录
@@ -44,11 +44,6 @@
 #  copy: src=/etc/ansible/roles/nginx/files/nginx1.14.1/nginx.conf dest=/usr/local/nginx/conf/nginx.conf 
 #  notify: restart tomcat
 
-- name: 开放端口服务
-  shell:
-        firewall-cmd --add-service=nginx --permanent
-        firewall-cmd --reload
-
 - name: 调优
   command: >
         sed -i '/sendfile        on;/a\    server_tokens  off;' /usr/local/nginx/conf/nginx.conf     
@@ -59,3 +54,7 @@
 - name: 开启nginx
   service: name=nginx state=started enabled=yes
 
+- name: 开放端口服务
+  shell:
+        firewall-cmd --add-service=nginx --permanent;
+        firewall-cmd --reload;

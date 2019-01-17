@@ -1,0 +1,12 @@
+[Unit]
+Description=Memcached
+Before=httpd.service tomcat.service php.service
+After=network.target
+
+[Service]
+Type=simple
+EnvironmentFile=/usr/local/memcached/memcached.conf
+ExecStart=/usr/local/memcached/bin/memcached -u $USER -p $PORT -m $CACHESIZE -c $MAXCONN $OPTIONS
+
+[Install]
+WantedBy=multi-user.target
