@@ -46,25 +46,26 @@
 #192.168.8.51 ansible_ssh_user=root ansible_ssh_pass=Root123456
 
 [nginx-servers]
-192.168.8.51
+#192.168.8.51 ansible_ssh_user=root ansible_ssh_pass=Root123456
 [httpd-servers]
-
+#192.168.8.51 ansible_ssh_user=root ansible_ssh_pass=Root123456 
+#192.168.8.52 ansible_ssh_user=root ansible_ssh_pass=Root123456 host_port=localhost:8082 http_port=8082  
 [php-servers]
 
 [tomcat-servers]
-192.168.8.51
+192.168.8.51 ansible_ssh_user=root ansible_ssh_pass=Root123456
 [mysql-servers]
-
+#192.168.8.51 ansible_ssh_user=root ansible_ssh_pass=Root123456
 [mariadb-servers]
 
 [memcached-servers]
-
+#192.168.8.51 ansible_ssh_user=root ansible_ssh_pass=Root123456 
 [mongodb-servers]
-
+#192.168.8.51 ansible_ssh_user=root ansible_ssh_pass=Root123456
 [redis-servers]
 
 [jdk-servers]
-192.168.8.51
+#192.168.8.51 ansible_ssh_user=root ansible_ssh_pass=Root123456
 [elasticsearch-servers]
 
 [logstash-servers]

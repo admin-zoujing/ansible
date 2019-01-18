@@ -3,7 +3,6 @@
 
 # 对所有主机进行基础配置
 - hosts: all
-      sudo:true
   roles:
     #  - security
     #  - logging
