@@ -56,5 +56,6 @@
 
 - name: 开放端口服务
   shell:
-        firewall-cmd --add-service=memcached --permanent;
-        firewall-cmd --reload
+      firewall-cmd --permanent --zone=public --add-port=11211/tcp --permanent;
+      firewall-cmd --permanent --query-port=11211/tcp;
+      firewall-cmd --reload;

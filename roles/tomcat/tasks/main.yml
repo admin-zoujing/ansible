@@ -40,5 +40,6 @@
 
 - name: 开放端口服务
   shell:
-        firewall-cmd --add-service=tomcat --permanent;
-        firewall-cmd --reload;
+     firewall-cmd --permanent --zone=public --add-port=8080/tcp --permanent;
+     firewall-cmd --permanent --query-port=8080/tcp;
+     firewall-cmd --reload;
