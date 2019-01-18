@@ -23,3 +23,6 @@
 # 5.修改用户名和邮箱地址
 # git config --global user.name "git"
 # git config --global user.email "489548322@qq.com"
+
+#6.error: failed to push some refs to 'https://github.com/admin-zoujing/ansible.git'
+#git pull--rebase origin master &&  git push -u origin master
