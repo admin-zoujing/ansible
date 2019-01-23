@@ -1,0 +1,18 @@
+[Unit]
+Description=mariadb Server
+Documentation=man:mariadbd(8)
+Documentation=http://dev.mariadb.com/doc/refman/en/using-systemd.html
+After=network.target
+After=syslog.target
+
+[Service]
+User=mariadb
+Group=mariadb
+ExecStart=/usr/local/mariadb/bin/mysqld --defaults-file=/usr/local/mariadb/conf/my.cnf
+LimitNOFILE = 5000
+Restart=on-failure
+RestartPreventExitStatus=1
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

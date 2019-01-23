@@ -1,0 +1,73 @@
+---
+
+- name: 创建组
+  group: name=mariadb
+- name: 创建用户
+  user: name=mariadb group=mariadb shell=/sbin/nologin
+
+- name: 创建拷贝目录
+  file: dest=/usr/local/src/mariadb10.2 state=directory
+                    
+- name: 发送mariadb文件到远程主机
+  copy: "src={{ item.src }} dest={{ item.dest }}"
+  with_items: 
+      - src: "/etc/ansible/roles/mariadb/files/mariadb10.2/mariadb-10.2.18.tar.gz"
+        dest: "/usr/local/src/mariadb10.2"
+      - src: "/etc/ansible/roles/mariadb/files/mariadb10.2/mysql-connector-java-8.0.13-1.el7.noarch.rpm"
+        dest: "/usr/local/src/mariadb10.2"
+      - src: "/etc/ansible/roles/mariadb/files/mariadb10.2/percona-toolkit-3.0.12-1.el7.x86_64.rpm"
+        dest: "/usr/local/src/mariadb10.2"
+      - src: "/etc/ansible/roles/mariadb/files/mariadb10.2/percona-xtrabackup-24-2.4.12-1.el7.x86_64.rpm"
+        dest: "/usr/local/src/mariadb10.2"
+      - src: "/etc/ansible/roles/mariadb/files/mariadb10.2/mysqldump.sh"
+        dest: "/usr/local/src/mariadb10.2"
+      - src: "/etc/ansible/roles/mariadb/files/mariadb10.2/xtrabackup.sh"
+        dest: "/usr/local/src/mariadb10.2"
+
+- name: 安装依赖包
+  shell:
+        yum -y install epel-release;yum install -y git jemalloc* libaio* bison* zlib-devel openssl*  ncurses* libcurl-devel libarchive-devel boost* lsof wget gcc* make cmake perl kernel-headers kernel-devel pcre-devel;yum install -y git jemalloc* libaio* bison* zlib-devel openssl*  ncurses* libcurl-devel libarchive-devel boost* lsof wget gcc* make cmake perl kernel-headers kernel-devel pcre-devel 
+
+- name: 卸载mysql和mariadb
+  shell: yum -y remove mysql*;yum -y remove mariadb*;
+
+- name: 编译安装mariadb
+  shell: 
+        cd /usr/local/src/mariadb10.2;mkdir -pv /usr/local/mariadb/{data,conf,logs};tar -zxvf mariadb-10.2.18.tar.gz -C /usr/local/mariadb;cd /usr/local/mariadb/mariadb-10.2.18/;cmake . -DCMAKE_INSTALL_PREFIX=/usr/local/mariadb -DMYSQL_DATADIR=/usr/local/mariadb/data -DTMPDIR=/usr/local/mariadb/data -DMYSQL_UNIX_ADDR=/usr/local/mariadb/logs/mariadb.sock -DWITH_MYISAM_STORAGE_ENGINE=1 -DWITH_INNOBASE_STORAGE_ENGINE=1 -DWITH_ARCHIVE_STORAGE_ENGINE=1 -DWITH_BLACKHOLE_STORAGE_ENGINE=1 -DWITH_PERFSCHEMA_STORAGE_ENGINE=1 -DWITH_FEDERATED_STORAGE_ENGINE=1 -DWITH_TOKUDB_STORAGE_ENGINE=1 -DWITH_XTRADB_STORAGE_ENGINE=1 -DWITH_ARIA_STORAGE_ENGINE=1 -DWITH_PARTITION_STORAGE_ENGINE=1 -DWITH_SPHINX_STORAGE_ENGINE=1 -DWITH_READLINE=1 -DMYSQL_TCP_PORT=3306 -DENABLED_LOCAL_INFILE=1 -DWITH_EXTRA_CHARSETS=all -DEXTRA_CHARSETS=all -DDEFAULT_CHARSET=utf8 -DDEFAULT_COLLATION=utf8_general_ci -DCMAKE_EXE_LINKER_FLAGS='-ljemalloc' -DWITH_SAFEMALLOC=OFF -DWITH_SSL=system -DWITH_ZLIB=system -DWITH_LIBWRAP=0;make;make install;make clean;rm -rf CMakeCache.txt;
+
+- name: 拷贝配置文件my.cnf  
+  copy: src=/etc/ansible/roles/mariadb/files/mariadb10.2/my.cnf dest=/usr/local/mariadb/conf/my.cnf
+
+- name: 加入二进制程序
+  shell: 
+       echo 'export PATH=/usr/local/mariadb/bin:$PATH' > /etc/profile.d/mariadb.sh;
+       ln -sv /usr/local/mariadb/include /usr/include/mariadb;
+       echo '/usr/local/mariadb/lib' > /etc/ld.so.conf.d/mariadb.conf;
+       ln -s /usr/local/mariadb/lib/libmysqlclient.so.20 /usr/lib/libmysqlclient.so.20;
+       ldconfig;
+       echo 'MANDATORY_MANPATH                       /usr/local/mariadb/man' >> /etc/man_db.conf;
+
+- name: 安装mariadbd启动脚本
+  copy: src=/etc/ansible/roles/mariadb/files/mariadb10.2/mariadbd.service dest=/usr/lib/systemd/system/mariadbd.service mode=0755
+
+- name: 初始化
+  shell: 
+        /usr/local/mariadb/scripts/mysql_install_db --user=mariadb --basedir=/usr/local/mariadb --datadir=/usr/local/mariadb/data/ --defaults-file=/usr/local/mariadb/conf/my.cnf
+
+- name: 赋予解压目录用户
+  file: path=/usr/local/mariadb owner=mariadb group=mariadb state=directory recurse=yes
+
+- name: 开启mariadbd
+  service: name=mariadbd state=started enabled=yes
+
+- name: 修改密码
+  shell:
+          /usr/local/mariadb/bin/mysql -uroot -e 'GRANT ALL PRIVILEGES ON *.* TO "root"@"%" IDENTIFIED BY "Root_123456*0987" WITH GRANT OPTION;';
+        /usr/local/mariadb/bin/mysqladmin -u root password 'Root_123456*0987';
+        systemctl restart mariadbd.service;
+
+- name: 开放端口服务
+  shell:
+       firewall-cmd --permanent --zone=public --add-port=3306/tcp --permanent;
+       firewall-cmd --permanent --query-port=3306/tcp;
+       firewall-cmd --reload;

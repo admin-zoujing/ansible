@@ -1,0 +1,67 @@
+---
+
+- name: 创建组
+  group: name=redis
+- name: 创建用户
+  user: name=redis group=redis shell=/sbin/nologin
+
+- name: 创建拷贝目录
+  file: dest=/usr/local/src/redis4.0.12 state=directory
+                    
+- name: 发送redis文件到远程主机
+  copy: "src={{ item.src }} dest={{ item.dest }}"
+  with_items: 
+      - src: "/etc/ansible/roles/redis/files/redis4.0.12/redis-4.0.12.tar.gz"
+        dest: "/usr/local/src/redis4.0.12"
+
+- name: 安装依赖包
+  shell:
+        yum -y install epel-release;yum install -y gcc gcc-c++ openssl-devel tcl;
+
+- name: 编译安装redis
+  shell: 
+       cd /usr/local/src/redis4.0.12;tar -zxvf redis-4.0.12.tar.gz -C /usr/local/;ln -s /usr/local/redis-4.0.12 /usr/local/redis;cd /usr/local/redis/;make test;make PREFIX=/usr/local/redis install;ls /usr/local/bin/;mkdir -pv /usr/local/redis/{logs,backup};
+
+- name: 编辑配置文件
+  shell: 
+       sed -i 's|bind 127.0.0.1|#bind 127.0.0.1|' /usr/local/redis/redis.conf;
+       sed -i 's|protected-mode yes|protected-mode no|' /usr/local/redis/redis.conf;
+       sed -i 's|dir ./|dir /usr/local/redis/backup|' /usr/local/redis/redis.conf;
+       sed -i 's|daemonize no|daemonize yes|' /usr/local/redis/redis.conf;
+       sed -i 's|pidfile /var/run/redis_6379.pid|pidfile /usr/local/redis/logs/redis_6379.pid|' /usr/local/redis/redis.conf;
+       sed -i 's|logfile ""|logfile "/usr/local/redis/logs/redis.log"|' /usr/local/redis/redis.conf;
+       sed -i 's|# requirepass foobared|requirepass sanxin|' /usr/local/redis/redis.conf;
+
+- name: 加入二进制程序
+  shell: 
+      echo 'export PATH=/usr/local/redis/bin:$PATH' > /etc/profile.d/redis.sh;
+      source /etc/profile.d/redis.sh;
+      ln -sv /usr/local/redis/include /usr/include/redis;
+      echo '/usr/local/redis/lib' > /etc/ld.so.conf.d/redis.conf;
+      ldconfig;
+      echo 'MANDATORY_MANPATH                       /usr/local/redis/man' >> /etc/man_db.conf;
+
+- name: 安装redis启动脚本
+  copy: src=/etc/ansible/roles/redis/files/redis4.0.12/redis.service dest=/usr/lib/systemd/system/redis.service mode=0755
+
+- name: 调优
+  shell: 
+       echo 'fs.file-max = 100000' >> /etc/sysctl.conf;
+       echo 'vm.overcommit_memory = 1' >> /etc/sysctl.conf;
+       echo 'net.core.somaxconn = 1024' >> /etc/sysctl.conf;
+       sysctl -p;
+       echo 'echo never > /sys/kernel/mm/transparent_hugepage/enabled' >> /etc/rc.d/rc.local;
+       chmod +x /etc/rc.d/rc.local;
+       echo never > /sys/kernel/mm/transparent_hugepage/enabled;
+
+- name: 赋予解压目录用户
+  file: path=/usr/local/redis owner=redis group=redis state=directory recurse=yes
+
+- name: 开启redis
+  service: name=redis state=started enabled=yes
+
+- name: 开放端口服务
+  shell:
+       firewall-cmd --permanent --zone=public --add-port=6379/tcp --permanent;
+       firewall-cmd --permanent --query-port=6379/tcp;
+       firewall-cmd --reload;
