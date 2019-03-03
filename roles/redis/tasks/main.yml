@@ -65,3 +65,4 @@
        firewall-cmd --permanent --zone=public --add-port=6379/tcp --permanent;
        firewall-cmd --permanent --query-port=6379/tcp;
        firewall-cmd --reload;
+       
