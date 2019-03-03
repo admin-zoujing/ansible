@@ -1,6 +1,5 @@
 ---
 
-
 #创建用户
 - name: group
   group: name=tomcat
