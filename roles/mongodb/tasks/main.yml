@@ -24,7 +24,7 @@
 
 - name: 加入二进制程序
   shell:
-       echo 'export PATH=/usr/local/mongodb/bin/:/usr/local/mongodb/sbin:$PATH' >> /etc/profile.d/mongodb.sh;
+       echo 'export PATH=/usr/local/mongodb/mongodb-linux-x86_64-rhel70-3.6.9/bin/:/usr/local/mongodb/mongodb-linux-x86_64-rhel70-3.6.9/sbin:$PATH' >> /etc/profile.d/mongodb.sh;
 
 - name: 拷贝配置文件mongo.conf
   copy: src=/etc/ansible/roles/mongodb/files/mongodb3.6.9/mongo.conf dest=/usr/local/mongodb/mongo.conf
