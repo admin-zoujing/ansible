@@ -7,6 +7,7 @@
 
 - name: 创建拷贝目录
   file: dest=/usr/local/src/mongodb3.6.9 state=directory
+  file: dest=/usr/local/mongodb state=directory  
                     
 - name: 发送mongodb文件到远程主机
   copy: "src={{ item.src }} dest={{ item.dest }}"
