@@ -20,7 +20,7 @@
 
 - name: 编译安装mongodb
   shell: 
-       cd /usr/local/src/mongodb3.6.9;tar -zxvf mongodb-linux-x86_64-rhel70-3.6.9.tgz -C /usr/local;ln -s /usr/local/mongodb-linux-x86_64-rhel70-3.6.9 /usr/local/mongodb;cd /usr/local/mongodb/;mkdir -pv /usr/local/mongodb/{data,logs};touch /usr/local/mongodb/logs/mongodb.log
+       cd /usr/local/src/mongodb3.6.9;tar -zxvf mongodb-linux-x86_64-rhel70-3.6.9.tgz -C /usr/local/mongodb;mkdir -pv /usr/local/mongodb/mongodb-linux-x86_64-rhel70-3.6.9/{data,logs};
 
 - name: 加入二进制程序
   shell:
