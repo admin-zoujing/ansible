@@ -30,13 +30,13 @@
   copy: src=/etc/ansible/roles/mongodb/files/mongodb3.6.9/mongodb.conf dest=/usr/local/mongodb/mongodb-linux-x86_64-rhel70-3.6.9/mongodb.conf
 
 - name: 安装mongodb启动脚本
-  copy: src=/etc/ansible/roles/mongodb/files/mongodb3.6.9/mongod.service dest=/usr/lib/systemd/system/mongod.service mode=0755
+  copy: src=/etc/ansible/roles/mongodb/files/mongodb3.6.9/mongodb.service dest=/usr/lib/systemd/system/mongodb.service mode=0755
 
 - name: 赋予解压目录用户
   file: path=/usr/local/mongodb owner=mongodb group=mongodb state=directory recurse=yes
 
 - name: 开启mongod
-  service: name=mongod state=started enabled=yes
+  service: name=mongodb state=started enabled=yes
 
 - name: 开放端口服务
   shell:
