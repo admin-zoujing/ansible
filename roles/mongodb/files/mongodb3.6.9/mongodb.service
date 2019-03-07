@@ -1,1 +1,15 @@
-1
+[Unit]
+Description=High-performance, schema-free document-oriented database
+After=syslog.target network.target
+
+[Service]
+Type=forking
+User=mongodb
+Group=mongodb
+ExecStart=/usr/local/mongodb/mongodb-linux-x86_64-rhel70-3.6.9/bin/mongod -f /usr/local/mongodb/mongodb-linux-x86_64-rhel70-3.6.9/mongodb.conf
+LimitNOFILE=64000
+TimeoutStartSec=180
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
