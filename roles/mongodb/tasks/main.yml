@@ -28,12 +28,17 @@
 
 - name: 拷贝配置文件mongodb.conf
   copy: src=/etc/ansible/roles/mongodb/files/mongodb3.6.9/mongodb.conf dest=/usr/local/mongodb/mongodb-linux-x86_64-rhel70-3.6.9/mongodb.conf
+  
+- name: 优化了系统参数
+  shell:
+       sed -i 's|#DefaultLimitNOFILE=|DefaultLimitNOFILE=32000|' /etc/systemd/system.conf;sed -i 's|#DefaultLimitNPROC=|DefaultLimitNPROC=32000|' /etc/systemd/system.conf;
 
 - name: 安装mongodb启动脚本
   copy: src=/etc/ansible/roles/mongodb/files/mongodb3.6.9/mongodb.service dest=/usr/lib/systemd/system/mongodb.service mode=0755
 
 - name: 赋予解压目录用户
   file: path=/usr/local/mongodb owner=mongodb group=mongodb state=directory recurse=yes
+
 
 - name: 开启mongod
   service: name=mongodb state=started enabled=yes
