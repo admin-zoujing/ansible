@@ -53,6 +53,7 @@
        echo 'echo never > /sys/kernel/mm/transparent_hugepage/enabled' >> /etc/rc.d/rc.local;
        chmod +x /etc/rc.d/rc.local;
        echo never > /sys/kernel/mm/transparent_hugepage/enabled;
+       systemctl daemon-reload;
 
 - name: 赋予解压目录用户
   file: path=/usr/local/redis owner=redis group=redis state=directory recurse=yes
